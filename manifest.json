@@ -1,0 +1,10 @@
+{
+	"id": "urai-scribe",
+	"name": "Urai Scribe",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "An AI helper",
+	"author": "Urai AI Corp",
+	"authorUrl": "https://uraiai.com",
+	"isDesktopOnly": false
+}
