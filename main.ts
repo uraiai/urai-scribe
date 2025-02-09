@@ -32,7 +32,7 @@ export default class ScribePlugin extends Plugin {
 		this.uraiHelper =  await startUraiHelper(this.pluginBaseDir)
 		
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('feather', 'Sample Plugin', (evt: MouseEvent) => {
+		const ribbonIconEl = this.addRibbonIcon('feather', 'Urai Scribe', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
 			new Notice('Chat with Urai coming soon.');
 		});
@@ -47,8 +47,9 @@ export default class ScribePlugin extends Plugin {
 		this.addCommand({
 			id: 'Improve Text',
 			name: 'Improve the given text',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
+			editorCallback: (editor: Editor, _view: MarkdownView) => {
 				const selectedText = editor.getSelection();
+
 				editor.replaceSelection(selectedText + '\n Yay. I have been improved')
 			}
 		});
