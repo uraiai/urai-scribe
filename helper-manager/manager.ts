@@ -2,6 +2,7 @@ import * as child_process from 'child_process';
 import * as fs from 'fs';
 import { Editor } from 'obsidian';
 import * as path from 'path';
+import { ScribeSettings } from 'settings';
 
 type ImproveTextResponse = {
 	given_text: string;
@@ -26,7 +27,7 @@ export class UraiHelper {
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify(vars)
+			body: JSON.stringify({ vars: vars })
 		});
 		const data = await response.json();
 		return data;
@@ -36,9 +37,9 @@ export class UraiHelper {
 		const wholeDocument = editor.getValue()
 		const workflow = 'improve_text';
 		const result = await this.executeWorkflow<ImproveTextResponse>(
-			workflow, { textToRewrite, wholeDocument }
+			workflow, { text_to_rewrite: textToRewrite, whole_document: wholeDocument }
 		);
-		if(result.error) {
+		if (result.error) {
 			throw new Error(result.error);
 		}
 		return result.output!;
@@ -133,7 +134,7 @@ interface LockFile {
 	port: number;
 }
 
-export function startUraiHelper(pluginBaseDir: string): Promise<UraiHelper> {
+export function startUraiHelper(pluginBaseDir: string, settings: ScribeSettings): Promise<UraiHelper> {
 	const lockFilePath = path.join(pluginBaseDir, '.urai-helper.lock');
 
 	return new Promise((resolve, reject) => {
@@ -162,9 +163,15 @@ export function startUraiHelper(pluginBaseDir: string): Promise<UraiHelper> {
 		if (!fs.existsSync(helperPath)) {
 			return reject(new Error('urai-helper binary not found'));
 		}
+		const env = {
+			...process.env,
+			OPENAI_API_KEY: (settings && settings.openAIAPIKey) || ''
+		}
+		console.log("launching with env", env)
 
 		const helperProcess = child_process.spawn(helperPath, {
-			stdio: ['ignore', 'pipe', 'pipe']
+			stdio: ['ignore', 'pipe', 'pipe'],
+			env
 		});
 
 		helperProcess.stdout.on('data', (data: Buffer) => {

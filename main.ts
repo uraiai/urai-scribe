@@ -1,16 +1,14 @@
 import * as child_process  from 'child_process';
 import * as path from 'path';
 import { startUraiHelper, stopUraiHelper, UraiHelper } from 'helper-manager/manager';
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, EditorSelection, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import {EditorView} from '@codemirror/view'
+import { ScribeSettings } from 'settings';
 
-// Remember to rename these classes and interfaces!
 
-interface ScribeSettings {
-	mySetting: string;
-}
 
 const DEFAULT_SETTINGS: ScribeSettings = {
-	mySetting: 'default'
+	openAIAPIKey: ''
 }
 
 export default class ScribePlugin extends Plugin {
@@ -29,7 +27,7 @@ export default class ScribePlugin extends Plugin {
 		await this.loadSettings();
 		this.vaultBaseDir = this.app.vault.adapter['basePath'];
 		this.pluginBaseDir = path.join(this.vaultBaseDir, this.manifest.dir!); 
-		this.uraiHelper =  await startUraiHelper(this.pluginBaseDir)
+		this.uraiHelper =  await startUraiHelper(this.pluginBaseDir, this.settings)
 		
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('feather', 'Urai Scribe', (evt: MouseEvent) => {
@@ -47,10 +45,27 @@ export default class ScribePlugin extends Plugin {
 		this.addCommand({
 			id: 'Improve Text',
 			name: 'Improve the given text',
-			editorCallback: (editor: Editor, _view: MarkdownView) => {
-				const selectedText = editor.getSelection();
-
-				editor.replaceSelection(selectedText + '\n Yay. I have been improved')
+			editorCallback: (editor: Editor, view: MarkdownView) => {
+				const editorView = view.editor.cm as EditorView;
+				const startPosition = editorView.state.selection.main.from;
+				this.uraiHelper.improveText(editor).then((output) => {
+					console.log(output)
+					const tx = editorView.state.update({ 
+						changes: { 
+							from: startPosition, 
+							insert: "\n" + output.rewritten_text + "\n" 
+						}
+					});
+					editorView.dispatch(tx);
+					// editor.transaction({
+					// 	changes: [{
+					// 		from: startPosition,
+					// 		text: "\n" + output.rewritten_text + "\n",
+					// 	}]
+					// })
+					
+					// editor.replaceSelection(output.rewritten_text)
+				})
 			}
 		});
 
@@ -86,13 +101,13 @@ class SampleSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
+			.setName('Open AI API Key')
+			.setDesc('You can get your key from https://platform.openai.com/')
 			.addText(text => text
 				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
+				.setValue(this.plugin.settings.openAIAPIKey)
 				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
+					this.plugin.settings.openAIAPIKey= value;
 					await this.plugin.saveSettings();
 				}));
 	}
