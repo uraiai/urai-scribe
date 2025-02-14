@@ -1,5 +1,6 @@
 import * as child_process from 'child_process';
 import * as fs from 'fs';
+import * as os from 'os';
 import { Editor } from 'obsidian';
 import * as path from 'path';
 import { ScribeSettings } from 'settings';
@@ -158,20 +159,33 @@ export function startUraiHelper(pluginBaseDir: string, settings: ScribeSettings)
 		}
 
 		// Find and start helper binary
-		const helperPath = path.join(pluginBaseDir, 'urai-helper');
-		console.log('Starting helper at', helperPath);
-		if (!fs.existsSync(helperPath)) {
+		const originalHelperPath = path.join(pluginBaseDir, 'urai-helper');
+		console.log('Original helper path:', originalHelperPath);
+		if (!fs.existsSync(originalHelperPath)) {
 			return reject(new Error('urai-helper binary not found'));
 		}
+
+		// Create temp directory with unique name
+		const tmpDir = path.join(os.tmpdir(), `urai-helper-${Date.now()}`);
+		fs.mkdirSync(tmpDir, { recursive: true });
+
+		// Copy binary to temp directory
+		const tempHelperPath = path.join(tmpDir, 'urai-helper');
+		fs.copyFileSync(originalHelperPath, tempHelperPath);
+		
+		// Make the temp binary executable
+		fs.chmodSync(tempHelperPath, '755');
+
+		console.log('Starting helper at temp location:', tempHelperPath);
+		
 		const env = {
 			...process.env,
 			OPENAI_API_KEY: settings.openAIAPIKey || '',
 			GEMINI_API_KEY: settings.geminiAPIKey || ''
-
 		}
 		console.log("launching with env", env)
 
-		const helperProcess = child_process.spawn(helperPath, {
+		const helperProcess = child_process.spawn(tempHelperPath, {
 			stdio: ['ignore', 'pipe', 'pipe'],
 			env
 		});
@@ -207,6 +221,13 @@ export function startUraiHelper(pluginBaseDir: string, settings: ScribeSettings)
 		});
 
 		helperProcess.on('exit', (code) => {
+			// Clean up temp directory
+			try {
+				fs.rmSync(tmpDir, { recursive: true, force: true });
+			} catch (error) {
+				console.error('Failed to clean up temp directory:', error);
+			}
+			
 			if (code !== 0) {
 				reject(new Error(`Helper exited with code ${code}`));
 			}
