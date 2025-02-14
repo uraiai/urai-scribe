@@ -165,7 +165,9 @@ export function startUraiHelper(pluginBaseDir: string, settings: ScribeSettings)
 		}
 		const env = {
 			...process.env,
-			OPENAI_API_KEY: (settings && settings.openAIAPIKey) || ''
+			OPENAI_API_KEY: settings.openAIAPIKey || '',
+			GEMINI_API_KEY: settings.geminiAPIKey || ''
+
 		}
 		console.log("launching with env", env)
 

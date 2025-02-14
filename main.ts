@@ -8,7 +8,8 @@ import { ScribeSettings } from 'settings';
 
 
 const DEFAULT_SETTINGS: ScribeSettings = {
-	openAIAPIKey: ''
+	openAIAPIKey: '',
+	geminiAPIKey: ''
 }
 
 export default class ScribePlugin extends Plugin {
@@ -101,13 +102,23 @@ class SampleSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('Open AI API Key')
+			.setName('OpenAI API Key')
 			.setDesc('You can get your key from https://platform.openai.com/')
 			.addText(text => text
 				.setPlaceholder('Enter your secret')
 				.setValue(this.plugin.settings.openAIAPIKey)
 				.onChange(async (value) => {
 					this.plugin.settings.openAIAPIKey= value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
+			.setName('Gemini API Key')
+			.setDesc('You can get your key from https://aistudio.google.com/')
+			.addText(text => text
+				.setPlaceholder('Enter your secret')
+				.setValue(this.plugin.settings.geminiAPIKey)
+				.onChange(async (value) => {
+					this.plugin.settings.geminiAPIKey= value;
 					await this.plugin.saveSettings();
 				}));
 	}
