@@ -1,7 +1,7 @@
 import * as child_process  from 'child_process';
 import * as path from 'path';
-import { startUraiHelper, stopUraiHelper, UraiHelper, setupUraiHelper } from 'helper-manager/manager';
-import { App, Editor, EditorSelection, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { UraiHelper, setupUraiHelper } from 'helper-manager/manager';
+import { App, Editor, MarkdownView, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import {EditorView} from '@codemirror/view'
 import { ScribeSettings } from 'settings';
 
@@ -27,7 +27,7 @@ export default class ScribePlugin extends Plugin {
 	async onload() {
 		console.log(this.manifest);
 		await this.loadSettings();
-		this.vaultBaseDir = this.app.vault.adapter['basePath'];
+		this.vaultBaseDir = (this.app.vault.adapter as any).basePath as string;
 		this.pluginBaseDir = path.join(this.vaultBaseDir, this.manifest.dir!); 
 		// this.uraiHelper =  await startUraiHelper(this.pluginBaseDir, this.settings)
 		this.uraiHelper = setupUraiHelper(this.pluginBaseDir, this.settings.port)
@@ -49,7 +49,7 @@ export default class ScribePlugin extends Plugin {
 			id: 'Improve Text',
 			name: 'Improve the given text',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
-				const editorView = view.editor.cm as EditorView;
+				const editorView = (view.editor as any).cm as EditorView;
 				const startPosition = editorView.state.selection.main.from;
 				this.uraiHelper.improveText(editor).then((output) => {
 					console.log(output)
@@ -60,14 +60,6 @@ export default class ScribePlugin extends Plugin {
 						}
 					});
 					editorView.dispatch(tx);
-					// editor.transaction({
-					// 	changes: [{
-					// 		from: startPosition,
-					// 		text: "\n" + output.rewritten_text + "\n",
-					// 	}]
-					// })
-					
-					// editor.replaceSelection(output.rewritten_text)
 				})
 			}
 		});
@@ -75,9 +67,6 @@ export default class ScribePlugin extends Plugin {
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 	}
 
 	async loadSettings() {
@@ -102,6 +91,7 @@ class SampleSettingTab extends PluginSettingTab {
 		const {containerEl} = this;
 
 		containerEl.empty();
+
 
 		new Setting(containerEl)
 			.setName('OpenAI API Key')
