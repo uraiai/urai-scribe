@@ -135,6 +135,13 @@ interface LockFile {
 	port: number;
 }
 
+export function setupUraiHelper(pluginBaseDir: string, port: number): UraiHelper{
+	const helper = new UraiHelper(port);
+	helper.registerPrompts(pluginBaseDir).then(console.log); // is async but we need not wait for it
+	helper.registerWorkflows(pluginBaseDir).then(console.log); // is async but we need not wait for it
+	return helper;
+}
+
 export function startUraiHelper(pluginBaseDir: string, settings: ScribeSettings): Promise<UraiHelper> {
 	const lockFilePath = path.join(pluginBaseDir, '.urai-helper.lock');
 

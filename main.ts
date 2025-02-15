@@ -1,6 +1,6 @@
 import * as child_process  from 'child_process';
 import * as path from 'path';
-import { startUraiHelper, stopUraiHelper, UraiHelper } from 'helper-manager/manager';
+import { startUraiHelper, stopUraiHelper, UraiHelper, setupUraiHelper } from 'helper-manager/manager';
 import { App, Editor, EditorSelection, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import {EditorView} from '@codemirror/view'
 import { ScribeSettings } from 'settings';
@@ -9,7 +9,8 @@ import { ScribeSettings } from 'settings';
 
 const DEFAULT_SETTINGS: ScribeSettings = {
 	openAIAPIKey: '',
-	geminiAPIKey: ''
+	geminiAPIKey: '',
+	port: 8741
 }
 
 export default class ScribePlugin extends Plugin {
@@ -19,8 +20,8 @@ export default class ScribePlugin extends Plugin {
 	pluginBaseDir: string;
 
 	onunload() {
-		console.log('unloading Urai Scribe');
-		stopUraiHelper(this.pluginBaseDir);
+		// console.log('unloading Urai Scribe');
+		// stopUraiHelper(this.pluginBaseDir);
 	}
 
 	async onload() {
@@ -28,7 +29,8 @@ export default class ScribePlugin extends Plugin {
 		await this.loadSettings();
 		this.vaultBaseDir = this.app.vault.adapter['basePath'];
 		this.pluginBaseDir = path.join(this.vaultBaseDir, this.manifest.dir!); 
-		this.uraiHelper =  await startUraiHelper(this.pluginBaseDir, this.settings)
+		// this.uraiHelper =  await startUraiHelper(this.pluginBaseDir, this.settings)
+		this.uraiHelper = setupUraiHelper(this.pluginBaseDir, this.settings.port)
 		
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('feather', 'Urai Scribe', (evt: MouseEvent) => {
